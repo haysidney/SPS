@@ -518,11 +518,9 @@ else
 }
 return
 
-; [WIN]+S Grab TOTP from the last used LastPass login
-#Include WaitPixelColor.ahk
-#s::
-if WinActive("ahk_exe chrome.exe")
+OpenLastPassExtension()
 {
+	global windowTitle
 	WinGetActiveTitle, windowTitle
 	Send {Alt down}i{Alt up}
 	WinWaitNotActive, %windowTitle%,,3
@@ -539,17 +537,72 @@ if WinActive("ahk_exe chrome.exe")
 		desiredColors.Push(0xf7f9fa)
 		; Chrome Dark Mode Forced
 		desiredColors.Push(0x1f2021)
-		if (WaitPixelColors(desiredColors, 7, 5, 3000, "RGB") == 0)
+		if (WaitPixelColors(desiredColors, 7, 5, 3000, "RGB") = 0)
 		{
-			Sleep, 100
-			Send {Down}{Down}{Enter}
-			Sleep, 100
-			Send {Right}{Right}{Down}{Down}{Down}{Enter}
+			return 0
 		}
 		else
 		{
 			PixelGetColor, colorFound, 7, 5, "RGB"
 			MsgBox, WaitPixelColor Color: %colorFound%
+		}
+	}
+	return 1
+}
+
+; [WIN]+C Quick Search LastPass logins
+#Include WaitPixelColor.ahk
+#c::
+if WinActive("ahk_exe chrome.exe")
+{
+	; Backup the clipboard, get the search, and restore the clipboard
+	save := Clipboard, Clipboard := ""
+	SendInput, {ctrl downtemp}ac{ctrl up}
+	ClipWait 1
+	search := Clipboard, Clipboard := save
+
+	if (OpenLastPassExtension() = 0)
+	{
+		Sleep, 100
+		Send %search%
+	}
+}
+return
+
+
+; [WIN]+S Grab TOTP from the last used LastPass login
+#Include WaitPixelColor.ahk
+#s::
+windowTitle :=
+if WinActive("ahk_exe chrome.exe")
+{
+	if (OpenLastPassExtension() = 0)
+	{
+		; Backup the clipboard, get the TOTP, and restore the clipboard
+		save := Clipboard, Clipboard := ""
+
+		Sleep, 100
+		Send {Up}{Up}{Up}{Up}{Up}{Up}{Up}{Enter}
+		Sleep, 100
+		Send {Right}{Right}{Down}{Down}{Down}{Enter}
+
+		ClipWait 1
+
+		; Paste the TOTP if we're on a NetSuite 2FA page
+		WinWaitActive, %windowTitle%,,3
+		if ErrorLevel
+		{
+			MsgBox, WinWait Timed Out
+		}
+		else
+		{
+			if WinActive("Two-factor login challenge")
+			{
+				SendInput, {ctrl downtemp}a{ctrl up}{BackSpace}
+				totp := Clipboard
+				Send %totp%
+				Clipboard := save
+			}
 		}
 	}
 }

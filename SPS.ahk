@@ -518,16 +518,42 @@ else
 }
 return
 
-; [WIN]+S to show/hide Sublime Text
+; [WIN]+S Grab TOTP from the last used LastPass login
+#Include WaitPixelColor.ahk
 #s::
-if WinActive("ahk_exe sublime_text.exe")
+if WinActive("ahk_exe chrome.exe")
 {
-	WinMinimize
+	WinGetActiveTitle, windowTitle
+	Send {Alt down}i{Alt up}
+	WinWaitNotActive, %windowTitle%,,3
+	if ErrorLevel
+	{
+		MsgBox, WinWait Timed Out
+	}
+	else
+	{
+		; Find the background color for "Search LastPass Vault" field.
+		; We do this so that we know that we are ready to start sending inputs.
+		desiredColors := []
+		; Light Mode
+		desiredColors.Push(0xf7f9fa)
+		; Chrome Dark Mode Forced
+		desiredColors.Push(0x1f2021)
+		if (WaitPixelColors(desiredColors, 7, 5, 3000, "RGB") == 0)
+		{
+			Sleep, 100
+			Send {Down}{Down}{Enter}
+			Sleep, 100
+			Send {Right}{Right}{Down}{Down}{Down}{Enter}
+		}
+		else
+		{
+			PixelGetColor, colorFound, 7, 5, "RGB"
+			MsgBox, WaitPixelColor Color: %colorFound%
+		}
+	}
 }
-else
-{
-	WinActivate, ahk_exe sublime_text.exe
-}
+return
 
 ; [Alt]+[Space] Minimize Window
 !Space::WinMinimize, A

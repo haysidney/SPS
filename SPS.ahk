@@ -10,6 +10,26 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 ; [CTRL]+[>] to force a window always on top.
 ;^>::  Winset, Alwaysontop, , A
 
+; ^Space::  ;[CTRL]+[SPACE] - it will append " - AlwaysOnTop" to windows when they are AlwaysOnTop
+;   WinGetActiveTitle, t
+;   WinGet, ExStyle, ExStyle, %t%
+;   if (ExStyle & 0x8)
+;   {
+;     WinSet, AlwaysOnTop, Off, %t%
+;     WinSetTitle, %t%,, % RegexReplace(t, " - AlwaysOnTop")
+;   }
+;   else
+;   {
+;     WinSet, AlwaysOnTop, On, %t%
+;     WinSetTitle, %t%,, %t% - AlwaysOnTop
+;   }
+; return
+
+!Esc:: ; [ALT]+[ESC] Send active window to back
+	WinGetActiveTitle, OutputVarWin
+	WinSet, Bottom, , %OutputVarWin%
+return
+
 ; [CTRL]+[SHIFT]+` to open this AutoHotKey script.
 ;^`::
 ;Run notepad++.exe "%A_AppData%\\..\\..\\Bin\\SPS.ahk"
